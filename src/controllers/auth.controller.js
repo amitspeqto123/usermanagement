@@ -1,4 +1,9 @@
-import { loginService, signupService } from "../services/auth.service.js";
+import {
+  forgotPasswordService,
+  loginService,
+  resetPasswordService,
+  signupService,
+} from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
 
@@ -23,3 +28,30 @@ export const loginController = catchAsync(async (req, res) => {
     }),
   );
 });
+
+export const forgotPasswordController = async (req, res, next) => {
+  try {
+    await forgotPasswordService(req.body.email);
+    res.status(200).json(
+      new ApiResponse({
+        statusCode: 200,
+        message: "Password reset link sent to email",
+      }),
+    );
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const resetPasswordController = async (req, res) => {
+  const { token, newPassword } = req.body;
+
+  await resetPasswordService({ token, newPassword });
+
+  res.status(200).json(
+    new ApiResponse({
+      statusCode: 200,
+      message: "Password reset successful",
+    }),
+  );
+};

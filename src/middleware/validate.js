@@ -1,0 +1,28 @@
+import Joi from "joi";
+import ApiError from "../utils/ApiError.js";
+
+const validate = (schema) => (req, res, next) => {
+  const validSchema = {};
+  if (schema.body) validSchema.body = schema.body;
+  if (schema.query) validSchema.query = schema.query;
+  if (schema.params) validSchema.params = schema.params;
+
+  const object = {};
+  if (schema.body) object.body = req.body;
+  if (schema.query) object.query = req.query;
+  if (schema.params) object.params = req.params;
+
+  const { error, value } = Joi.compile(validSchema)
+    .prefs({ abortEarly: false })
+    .validate(object);
+
+  if (error) {
+    const message = error.details.map((d) => d.message).join(", ");
+    return next(new ApiError(400, message));
+  }
+
+  Object.assign(req, value);
+  next();
+};
+
+export default validate;

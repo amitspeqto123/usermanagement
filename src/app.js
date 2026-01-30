@@ -5,6 +5,7 @@ import morgan from "morgan";
 
 //import authRoutes from "./routes/authRoute.js";
 import authRoute from "./routes/auth.route.js"
+import profileRoute from "./routes/profile.route.js"
 import ApiError from "../src/utils/ApiError.js"
 
 const app = express();
@@ -28,6 +29,7 @@ app.use(morgan("dev"));
 
 // Routes
 app.use("/v1/auth", authRoute);
+app.use("/v1/profile", profileRoute);
 // send back a 404 error for any unknown api request
 // app.use((req, res, next) => {
 //   next(new ApiError(404, "Not found"));

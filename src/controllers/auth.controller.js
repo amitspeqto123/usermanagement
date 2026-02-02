@@ -6,8 +6,9 @@ import {
 } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
-import { transporter } from "../utils/mailer.js";
 //import { sendMailgunEmail } from "../utils/mail.service.js";
+import { transporter } from "../utils/mailer.js";
+
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
@@ -26,7 +27,6 @@ export const signupController = catchAsync(async (req, res) => {
     subject: "Welcome",
     text: "Registration successful",
   });
-  //await sendMail(user.email);
   res.status(201).json(
     new ApiResponse({
       statusCode: 201,

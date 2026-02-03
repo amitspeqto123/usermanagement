@@ -1,3 +1,5 @@
+import { User } from "../models/auth.model.js";
+import crypto from "crypto";
 import {
   forgotPasswordService,
   loginService,
@@ -11,22 +13,47 @@ import { sendMailgunEmail } from "../utils/mail.service.js";
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
-  //Send welcome email via Mailgun (async side effect)
-  const result = await sendMailgunEmail({
+  // Generate verification token
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  user.verificationToken = verificationToken;
+  // token 24 hours valid
+  user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+  await user.save();
+  const verificationLink = `http://localhost:8080/v1/auth/verify-email?token=${verificationToken}`;
+  await sendMailgunEmail({
     to: user.email,
-    subject: "Welcome to MyApp!",
-    text: `Hi, your registration was successful. Welcome aboard!`,
-    html: `<p>Hi, your registration was <strong>successful</strong>. Welcome aboard!</p>`,
-  }).catch((err) => {
-    console.log("Mailgun error:", err.message);
+    subject: "Verify your email",
+    text: `Verify your email using this link: ${verificationLink}`,
+    html: `
+<!DOCTYPE html>
+<html>
+  <body style="font-family: Arial, sans-serif;">
+    <h2>Email Verification</h2>
+    <p>Please verify your email by clicking the button below:</p>
+
+    <a 
+      href="${verificationLink}" 
+      style="
+        display:inline-block;
+        padding:12px 20px;
+        background:#4F46E5;
+        color:#ffffff;
+        text-decoration:none;
+        border-radius:6px;
+        font-weight:bold;
+      "
+    >
+      Verify Email
+    </a>
+
+    <p style="margin-top:20px;">
+      Or copy and paste this link:<br/>
+      ${verificationLink}
+    </p>
+  </body>
+</html>
+`,
   });
-  console.log("Mail gun result", result);
-  // await transporter.sendMail({
-  //   from: "amit.kumargupta@speqto.com",
-  //   to: user.email,
-  //   subject: "Welcome",
-  //   text: "Registration successful",
-  // });
   res.status(201).json(
     new ApiResponse({
       statusCode: 201,
@@ -73,3 +100,17 @@ export const resetPasswordController = async (req, res) => {
     }),
   );
 };
+
+export const verifyEmail = catchAsync(async (req, res) => {
+  const { token } = req.query;
+  const user = await User.findOne({ verificationToken: token });
+  if (!user) {
+    return res.status(400).json({ message: "Invalid or expired token" });
+  }
+
+  user.emailVerified = true;
+  user.verificationToken = undefined;
+  await user.save();
+
+  res.json({ message: "Email verified successfully! You can now login." });
+});

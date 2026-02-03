@@ -18,7 +18,10 @@ export const loginService = async (data) => {
   const { email, password } = data;
   const user = await User.findOne({ email });
   if (!user) throw new ApiError(404, "User not found");
-
+  // Email verification check
+  if (!user.emailVerified) {
+    throw new ApiError(403, "Please verify your email before logging in.");
+  }
   const match = await bcrypt.compare(password, user.password);
   if (!match) throw new Error("Password incorrect");
   const token = generateToken(user._id, user.email);

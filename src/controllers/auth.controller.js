@@ -6,27 +6,27 @@ import {
 } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
-//import { sendMailgunEmail } from "../utils/mail.service.js";
-import { transporter } from "../utils/mailer.js";
-
+import { sendMailgunEmail } from "../utils/mail.service.js";
+//import { transporter } from "../utils/mailer.js";
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
   //Send welcome email via Mailgun (async side effect)
-  // sendMailgunEmail({
-  //   to: user.email,
-  //   subject: "Welcome to MyApp!",
-  //   text: `Hi, your registration was successful. Welcome aboard!`,
-  //   html: `<p>Hi, your registration was <strong>successful</strong>. Welcome aboard!</p>`,
-  // }).catch((err) => {
-  //   console.log("Mailgun error:", err.message);
-  // });
-  await transporter.sendMail({
-    from: "amit.kumargupta@speqto.com",
+  const result = await sendMailgunEmail({
     to: user.email,
-    subject: "Welcome",
-    text: "Registration successful",
+    subject: "Welcome to MyApp!",
+    text: `Hi, your registration was successful. Welcome aboard!`,
+    html: `<p>Hi, your registration was <strong>successful</strong>. Welcome aboard!</p>`,
+  }).catch((err) => {
+    console.log("Mailgun error:", err.message);
   });
+  console.log("Mail gun result", result);
+  // await transporter.sendMail({
+  //   from: "amit.kumargupta@speqto.com",
+  //   to: user.email,
+  //   subject: "Welcome",
+  //   text: "Registration successful",
+  // });
   res.status(201).json(
     new ApiResponse({
       statusCode: 201,

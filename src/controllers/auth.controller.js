@@ -84,9 +84,10 @@ export const forgotPasswordController = async (req, res, next) => {
 };
 
 export const resetPasswordController = async (req, res) => {
-  const { token, newPassword } = req.body;
+  const { token } = req.query;
+  const { password } = req.body;
 
-  await resetPasswordService({ token, newPassword });
+  await resetPasswordService({ token, password });
 
   res.status(200).json(
     new ApiResponse({

@@ -21,7 +21,15 @@ const validate = (schema) => (req, res, next) => {
     return next(new ApiError(400, message));
   }
 
-  Object.assign(req, value);
+  // ✅ body & params → replace allowed
+  if (value.body) req.body = value.body;
+  if (value.params) req.params = value.params;
+
+  // ✅ query → MUTATE, never replace
+  if (value.query) {
+    Object.assign(req.query, value.query);
+  }
+
   next();
 };
 

@@ -50,7 +50,7 @@ export const forgotPasswordService = async (email) => {
     html: `<p>Click <a href="${resetUrl}">here</a> to reset your password.</p>`,
   });
 };
-export const resetPasswordService = async ({ token, newPassword }) => {
+export const resetPasswordService = async ({ token, password }) => {
   const resetToken = await PasswordReset.findOne({ token, isUsed: false });
 
   if (!resetToken) {
@@ -66,7 +66,7 @@ export const resetPasswordService = async ({ token, newPassword }) => {
     throw new ApiError(404, "User not found");
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
+  const hashedPassword = await bcrypt.hash(password, 10);
   user.password = hashedPassword;
   await user.save();
 

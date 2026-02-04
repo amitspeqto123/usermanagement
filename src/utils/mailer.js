@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import nodemailer from "nodemailer";
 
 // export const transporter = nodemailer.createTransport({
@@ -12,7 +14,16 @@ import nodemailer from "nodemailer";
 export const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: "amit.kumargupta@speqto.com",
-    pass: "dphi kirt nuxh emol",
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
   },
 });
+export const sendEmail = async ({ to, subject, html, text }) => {
+  await transporter.sendMail({
+    from: `"Speqto" <amit.kumargupta@speqto.com>`,
+    to,
+    subject,
+    text,
+    html,
+  });
+};

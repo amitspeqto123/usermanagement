@@ -8,45 +8,43 @@ import {
 } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
-import { sendMailgunEmail } from "../utils/mail.service.js";
-//import { transporter } from "../utils/mailer.js";
+import { sendEmail } from "../utils/mailer.js";
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
-  // Generate verification token
+
   const verificationToken = crypto.randomBytes(32).toString("hex");
+
   user.verificationToken = verificationToken;
-  // token 24 hours valid
   user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+
   await user.save();
+
   const verificationLink = `http://localhost:8080/v1/auth/verify-email?token=${verificationToken}`;
-  await sendMailgunEmail({
+  await sendEmail({
     to: user.email,
     subject: "Verify your email",
-    text: `Verify your email using this link: ${verificationLink}`,
     html: `
 <!DOCTYPE html>
 <html>
-  <body style="font-family: Arial, sans-serif;">
-    <h2>Email Verification</h2>
-    <p>Please verify your email by clicking the button below:</p>
+  <body>
+    <p>Please verify your email:</p>
 
-    <a 
-      href="${verificationLink}" 
-      style="
-        display:inline-block;
-        padding:12px 20px;
-        background:#4F46E5;
-        color:#ffffff;
-        text-decoration:none;
-        border-radius:6px;
-        font-weight:bold;
-      "
-    >
+    <a href="${verificationLink}"
+       target="_blank"
+       style="
+         display:inline-block;
+         padding:12px 18px;
+         background:#4F46E5;
+         color:#ffffff;
+         text-decoration:none;
+         border-radius:6px;
+         font-weight:bold;
+       ">
       Verify Email
     </a>
 
-    <p style="margin-top:20px;">
+    <p>
       Or copy and paste this link:<br/>
       ${verificationLink}
     </p>
@@ -54,14 +52,11 @@ export const signupController = catchAsync(async (req, res) => {
 </html>
 `,
   });
-  res.status(201).json(
-    new ApiResponse({
-      statusCode: 201,
-      message: "Signup successful",
-      total: 1,
-      data: user,
-    }),
-  );
+
+  res.status(201).json({
+    success: true,
+    message: "Signup successful. Please verify your email.",
+  });
 });
 export const loginController = catchAsync(async (req, res) => {
   const { user, token } = await loginService(req.body);
@@ -103,14 +98,28 @@ export const resetPasswordController = async (req, res) => {
 
 export const verifyEmail = catchAsync(async (req, res) => {
   const { token } = req.query;
-  const user = await User.findOne({ verificationToken: token });
+  const user = await User.findOne({
+    verificationToken: token,
+    verificationTokenExpires: { $gt: Date.now() },
+  });
   if (!user) {
-    return res.status(400).json({ message: "Invalid or expired token" });
+    return res.status(400).json({
+      success: false,
+      message: "Invalid or expired verification link",
+    });
   }
-
+  // if (!user) {
+  //   return res.redirect("http://localhost:3000/verify?status=fail");
+  // }
   user.emailVerified = true;
   user.verificationToken = undefined;
+  user.verificationTokenExpires = undefined;
   await user.save();
-
-  res.json({ message: "Email verified successfully! You can now login." });
+  return res.status(200).json({
+    success: true,
+    message: "Email verified successfully",
+  });
+  // return res.redirect(
+  //   "http://localhost:3000/verify?status=success"
+  // );
 });

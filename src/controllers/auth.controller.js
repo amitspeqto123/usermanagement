@@ -8,7 +8,9 @@ import {
 } from "../services/auth.service.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
-import { sendEmail } from "../utils/mailer.js";
+//import { sendEmail } from "../utils/mailer.js";
+//import { sendEmail } from "../utils/mailer.js";
+import { sendMailgunEmail } from "../utils/mail.service.js";
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
@@ -21,38 +23,47 @@ export const signupController = catchAsync(async (req, res) => {
   await user.save();
 
   const verificationLink = `http://localhost:8080/v1/auth/verify-email?token=${verificationToken}`;
-  await sendEmail({
+  // this mail is sending through nodemailer
+  //   await sendEmail({
+  //     to: user.email,
+  //     subject: "Verify your email",
+  //     html: `
+  // <!DOCTYPE html>
+  // <html>
+  //   <body>
+  //     <p>Please verify your email:</p>
+
+  //     <a href="${verificationLink}"
+  //        target="_blank"
+  //        style="
+  //          display:inline-block;
+  //          padding:12px 18px;
+  //          background:#4F46E5;
+  //          color:#ffffff;
+  //          text-decoration:none;
+  //          border-radius:6px;
+  //          font-weight:bold;
+  //        ">
+  //       Verify Email
+  //     </a>
+
+  //     <p>
+  //       Or copy and paste this link:<br/>
+  //       ${verificationLink}
+  //     </p>
+  //   </body>
+  // </html>
+  // `,
+  //   });
+
+  await sendMailgunEmail({
     to: user.email,
     subject: "Verify your email",
     html: `
-<!DOCTYPE html>
-<html>
-  <body>
     <p>Please verify your email:</p>
-
-    <a href="${verificationLink}"
-       target="_blank"
-       style="
-         display:inline-block;
-         padding:12px 18px;
-         background:#4F46E5;
-         color:#ffffff;
-         text-decoration:none;
-         border-radius:6px;
-         font-weight:bold;
-       ">
-      Verify Email
-    </a>
-
-    <p>
-      Or copy and paste this link:<br/>
-      ${verificationLink}
-    </p>
-  </body>
-</html>
-`,
+    <a href="${verificationLink}">Verify Email</a>
+  `,
   });
-
   res.status(201).json({
     success: true,
     message: "Signup successful. Please verify your email.",

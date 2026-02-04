@@ -18,6 +18,8 @@ export const transporter = nodemailer.createTransport({
     pass: process.env.EMAIL_PASS,
   },
 });
+
+// for Verify Email after signup
 export const sendEmail = async ({ to, subject, html, text }) => {
   await transporter.sendMail({
     from: `"Speqto" <amit.kumargupta@speqto.com>`,

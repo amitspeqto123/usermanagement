@@ -21,7 +21,7 @@ const validate = (schema) => (req, res, next) => {
     return next(new ApiError(400, message));
   }
 
-  // ✅ body & params → replace allowed
+  //body & params → replace allowed
   if (value.body) req.body = value.body;
   if (value.params) req.params = value.params;
 

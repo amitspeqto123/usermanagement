@@ -9,20 +9,21 @@ import {
 import ApiResponse from "../utils/ApiResponse.js";
 import catchAsync from "../utils/catchAsync.js";
 //import { sendEmail } from "../utils/mailer.js";
-//import { sendEmail } from "../utils/mailer.js";
 import { sendMailgunEmail } from "../utils/mail.service.js";
+import { VerificationToken } from "../models/verificationToken.js";
 
 export const signupController = catchAsync(async (req, res) => {
   const user = await signupService(req.body);
 
-  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const token = crypto.randomBytes(32).toString("hex");
 
-  user.verificationToken = verificationToken;
-  user.verificationTokenExpires = Date.now() + 24 * 60 * 60 * 1000;
+  await VerificationToken.create({
+    userId: user._id,
+    token,
+    expiresAt: Date.now() + 24 * 60 * 60 * 1000, // 24h
+  });
 
-  await user.save();
-
-  const verificationLink = `http://localhost:8080/v1/auth/verify-email?token=${verificationToken}`;
+  const verifyUrl = `http://localhost:8080/v1/auth/verify-email?token=${token}`;
   // this mail is sending through nodemailer
   //   await sendEmail({
   //     to: user.email,
@@ -61,7 +62,7 @@ export const signupController = catchAsync(async (req, res) => {
     subject: "Verify your email",
     html: `
     <p>Please verify your email:</p>
-    <a href="${verificationLink}">Verify Email</a>
+    <a href="${verifyUrl}">Verify Email</a>
   `,
   });
   res.status(201).json({
@@ -108,30 +109,58 @@ export const resetPasswordController = async (req, res) => {
   );
 };
 
-export const verifyEmail = catchAsync(async (req, res) => {
+// export const verifyEmail = catchAsync(async (req, res) => {
+//   const { token } = req.query;
+//   const user = await User.findOne({
+//     verificationToken: token,
+//     verificationTokenExpires: { $gt: Date.now() },
+//   });
+//   if (!user) {
+//     return res.status(400).json({
+//       success: false,
+//       message: "Invalid or expired verification link",
+//     });
+//   }
+//   // if (!user) {
+//   //   return res.redirect("http://localhost:5173/verify?status=fail");
+//   // }
+//   user.emailVerified = true;
+//   user.verificationToken = undefined;
+//   user.verificationTokenExpires = undefined;
+//   await user.save();
+//   return res.status(200).json({
+//     success: true,
+//     message: "Email verified successfully",
+//   });
+//   // return res.redirect(
+//   //   "http://localhost:5173/verify?status=success"
+//   // );
+// });
+
+export const verifyEmailController = catchAsync(async (req, res) => {
   const { token } = req.query;
-  const user = await User.findOne({
-    verificationToken: token,
-    verificationTokenExpires: { $gt: Date.now() },
+
+  const verification = await VerificationToken.findOne({
+    token,
+    expiresAt: { $gt: Date.now() },
   });
-  if (!user) {
+
+  // if (!verification) {
+  //   return res.redirect("http://localhost:5173/verify?status=fail");
+  // }
+  if(!verification){
     return res.status(400).json({
       success: false,
       message: "Invalid or expired verification link",
     });
   }
-  // if (!user) {
-  //   return res.redirect("http://localhost:5173/verify?status=fail");
-  // }
-  user.emailVerified = true;
-  user.verificationToken = undefined;
-  user.verificationTokenExpires = undefined;
-  await user.save();
+  await User.findByIdAndUpdate(verification.userId, {
+    emailVerified: true,
+  });
+  await VerificationToken.deleteOne({ _id: verification._id });
+  //return res.redirect("http://localhost:5173/verify?status=success");
   return res.status(200).json({
     success: true,
     message: "Email verified successfully",
   });
-  // return res.redirect(
-  //   "http://localhost:5173/verify?status=success"
-  // );
 });

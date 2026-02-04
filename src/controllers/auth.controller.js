@@ -110,7 +110,7 @@ export const verifyEmail = catchAsync(async (req, res) => {
     });
   }
   // if (!user) {
-  //   return res.redirect("http://localhost:3000/verify?status=fail");
+  //   return res.redirect("http://localhost:5173/verify?status=fail");
   // }
   user.emailVerified = true;
   user.verificationToken = undefined;
@@ -121,6 +121,6 @@ export const verifyEmail = catchAsync(async (req, res) => {
     message: "Email verified successfully",
   });
   // return res.redirect(
-  //   "http://localhost:3000/verify?status=success"
+  //   "http://localhost:5173/verify?status=success"
   // );
 });

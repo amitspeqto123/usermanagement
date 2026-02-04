@@ -25,7 +25,7 @@ const validate = (schema) => (req, res, next) => {
   if (value.body) req.body = value.body;
   if (value.params) req.params = value.params;
 
-  // ✅ query → MUTATE, never replace
+  //query → MUTATE, never replace
   if (value.query) {
     Object.assign(req.query, value.query);
   }
